@@ -5,7 +5,9 @@ import { ManagementLoginRequired, ManagementShell } from "@/components/managemen
 import { staffSession } from "@/components/staff/StaffShell";
 import { money } from "@/lib/fnb";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { ADVANCED_REPORT_TYPES, type AdvancedReportDataset, type AdvancedReportType, type ReportCell, type ReportColumn } from "@/lib/advanced-reporting";
+import type { AdvancedReportDataset, AdvancedReportType, ReportCell, ReportColumn } from "@/lib/advanced-reporting";
+
+const ADVANCED_REPORT_TYPES: AdvancedReportType[] = ["sales", "outlets", "employees", "overrides"];
 
 type Session = { id: string; name: string; role: string };
 type ResponseBody = { access: { id: string; name: string; role: string }; report: AdvancedReportDataset };
