@@ -71,9 +71,6 @@ export default function WalletPage() {
     }, 1200);
   }
 
-  const kind = (e: Entry) =>
-    e.type === "refund" ? "ll-status-success" : e.type === "purchase" ? "ll-status-info" : "ll-status-warning";
-
   const entryTypeLabel = (type: string) =>
     type === "purchase" ? "Order paid" : type === "deposit" ? "Money added" : type === "refund" ? "Refund" : type;
 

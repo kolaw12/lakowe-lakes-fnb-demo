@@ -112,7 +112,7 @@ export function ManagementShell({
     }
   }
 
-  const navLinks = (mobile = false) => (
+  const navLinks = () => (
     <nav aria-label="Management navigation" className="mt-6 space-y-6">
       {groups.map(([groupName, links]) => (
         <section key={groupName}>
@@ -270,7 +270,7 @@ export function ManagementShell({
                 </button>
               </div>
 
-              {navLinks(true)}
+              {navLinks()}
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-4">

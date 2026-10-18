@@ -5,7 +5,7 @@ import { ManagementLoginRequired, ManagementShell } from "@/components/managemen
 import { staffSession } from "@/components/staff/StaffShell";
 import { Dropdown } from "@/components/ui/Dropdown";
 type Session={id:string;name:string;role:string};type Filters={from:string;to:string;category:string;severity:string;outlet:string};type Row={id:string;categoryLabel:string;severity:string;outletName:string|null;reference:string;status:string;detectedAt:string;explanation:string;nextStep:string;href:string};type Report={options:{categories:{id:string;label:string}[];severities:string[];outlets:{id:string;name:string}[]};summary:{total:number;high:number;medium:number;info:number};pagination:{page:number;totalPages:number;totalItems:number};exceptions:Row[];severityRules:string[];limitations:string[]};
-const blank:Filters={from:"",to:"",category:"",severity:"",outlet:""};const title=(v:string)=>v.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());const tone=(v:string)=>v==="high"?"bg-red-300/10 text-red-200":v==="medium"?"bg-amber-300/10 text-amber-100":"bg-sky-300/10 text-sky-100";
+const blank:Filters={from:"",to:"",category:"",severity:"",outlet:""};const title=(v:string)=>v.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());
 export default function ExceptionsPage() {
   const [session, setSession] = useState<Session | null>(null),
     [report, setReport] = useState<Report | null>(null),
