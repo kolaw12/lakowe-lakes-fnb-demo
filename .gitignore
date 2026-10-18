@@ -13,8 +13,9 @@
 .env
 
 # prisma & sqlite databases
-prisma/*.db
-prisma/*.db-journal
+prisma/dev.db
+prisma/dev.db-journal
+!prisma/demo-seed.db
 
 # misc
 .DS_Store
