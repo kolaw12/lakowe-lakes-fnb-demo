@@ -93,13 +93,7 @@ export default function ItemDetail() {
       setNotice({ message: "Please choose your required preference before adding.", type: "error" });
       return;
     }
-    if (!addItem(activeDish.id, quantity, choices)) {
-      setNotice({
-        message: "Your basket currently contains items from another outlet. Clear it or checkout first.",
-        type: "error",
-      });
-      return;
-    }
+    addItem(activeDish.id, quantity, choices);
 
     setAdded(true);
     setNotice({ message: `Added ${quantity}× ${activeDish.name} to your basket!`, type: "success" });

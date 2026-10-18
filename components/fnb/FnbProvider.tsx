@@ -11,6 +11,7 @@ type FnbContextValue = {
   addItem: (itemId: string, quantity: number, choices: ModifierChoice[]) => boolean;
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
+  clearOutlet: (outletId: string) => void;
   checkout: (outletId: string, customerName: string, handoffMode?: string, destination?: string) => Promise<DemoOrder | null>;
 };
 
@@ -79,9 +80,6 @@ export function FnbProvider({ children }: { children: React.ReactNode }) {
       orders,
       ready,
       addItem(itemId: string, quantity: number, choices: ModifierChoice[]) {
-        const incomingOutlet = getItem(itemId)?.outletId;
-        const existingOutlet = cart[0] && getItem(cart[0].itemId)?.outletId;
-        if (existingOutlet && incomingOutlet && existingOutlet !== incomingOutlet) return false;
         const choiceKey = choices.map((choice) => choice.id).sort().join("-");
         const existingKey = `${itemId}-${choiceKey}`;
         setCart((current) => {
@@ -98,12 +96,16 @@ export function FnbProvider({ children }: { children: React.ReactNode }) {
       removeItem(lineKey: string) {
         setCart((current) => current.filter((line) => line.key !== lineKey));
       },
+      clearOutlet(outletId: string) {
+        setCart((current) => current.filter((line) => getItem(line.itemId)?.outletId !== outletId));
+      },
       async checkout(outletId: string, customerName: string, handoffMode?: string, destination?: string) {
-        if (!cart.length || !cart.every((line) => getItem(line.itemId)?.outletId === outletId)) return null;
+        const outletItems = cart.filter((line) => getItem(line.itemId)?.outletId === outletId);
+        if (!outletItems.length) return null;
         const response = await fetch("/api/demo", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "createOrder", outletId, customerName, items: cart, handoffMode, destination }),
+          body: JSON.stringify({ action: "createOrder", outletId, customerName, items: outletItems, handoffMode, destination }),
         });
         const result = await response.json();
         if (!response.ok) {
@@ -123,7 +125,8 @@ export function FnbProvider({ children }: { children: React.ReactNode }) {
           : rawOrder;
 
         setOrders((current) => [guestOrder, ...current.filter((o) => o.reference !== guestOrder.reference)]);
-        setCart([]);
+        // Keep dishes from other venues saved in the basket!
+        setCart((current) => current.filter((line) => getItem(line.itemId)?.outletId !== outletId));
         return guestOrder;
       },
     }),

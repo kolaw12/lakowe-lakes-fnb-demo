@@ -2,23 +2,27 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { FnbShell } from "@/components/fnb/FnbShell";
 import { useFnb } from "@/components/fnb/FnbProvider";
-import { cartTotal, money, outlets, HANDOFF_MODES, type DemoOrder, type HandoffMode } from "@/lib/fnb";
+import { cartTotal, getItem, money, outlets, HANDOFF_MODES, type CartItem, type DemoOrder, type HandoffMode } from "@/lib/fnb";
 import { OPERA_DEMO_SCENARIOS } from "@/lib/opera-demo-adapter";
 import type { OperaAttemptResult } from "@/lib/opera-room-charge";
 
 type PaymentMethod = "demo" | "wallet" | "opera";
 const storageKey = "lakowe-fnb-demo-v1";
 
-function saveExternalOrder(order: DemoOrder) {
+function saveExternalOrder(order: DemoOrder, outletIdToClear?: string) {
   let existing: DemoOrder[] = [];
+  let remainingCart: CartItem[] = [];
   try {
-    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}") as { orders?: DemoOrder[] };
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}") as { orders?: DemoOrder[]; cart?: CartItem[] };
     existing = stored.orders || [];
+    if (stored.cart && outletIdToClear) {
+      remainingCart = stored.cart.filter(item => getItem(item.itemId)?.outletId !== outletIdToClear);
+    }
   } catch {}
-  localStorage.setItem(storageKey, JSON.stringify({ version: 2, cart: [], orders: [order, ...existing.filter(item => item.reference !== order.reference)] }));
+  localStorage.setItem(storageKey, JSON.stringify({ version: 2, cart: remainingCart, orders: [order, ...existing.filter(item => item.reference !== order.reference)] }));
 }
 
 const handoffConfig: Record<HandoffMode, { title: string; desc: string; destLabel: string; placeholder: string; outlets: string[] }> = {
@@ -57,7 +61,9 @@ function CheckoutContent() {
   const router = useRouter();
   const outletId = params.get("outlet") || "";
   const outlet = outlets.find(item => item.id === outletId);
-  const { cart, checkout } = useFnb();
+  const { cart, checkout, clearOutlet } = useFnb();
+  const outletCart = useMemo(() => cart.filter(item => getItem(item.itemId)?.outletId === outletId), [cart, outletId]);
+  const otherItemsCount = cart.length - outletCart.length;
   const [name, setName] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("demo");
   const [handoffMode, setHandoffMode] = useState<HandoffMode>("counter");
@@ -72,7 +78,7 @@ function CheckoutContent() {
   const submitting = useRef(false);
   const walletKey = useRef("");
   const operaKey = useRef("");
-  const total = cartTotal(cart);
+  const total = cartTotal(outletCart);
 
   const availableModes = HANDOFF_MODES.filter(mode => handoffConfig[mode].outlets.includes(outletId));
 
@@ -129,7 +135,7 @@ function CheckoutContent() {
           action: "checkout",
           outletId,
           customerName: name,
-          items: cart,
+          items: outletCart,
           idempotencyKey: walletKey.current,
           handoffMode,
           destination: effectiveDestination,
@@ -148,7 +154,8 @@ function CheckoutContent() {
             },
           }
         : result.order;
-      saveExternalOrder(guestOrder);
+      saveExternalOrder(guestOrder, outletId);
+      clearOutlet(outletId);
       if (result.credentialRecoveryUnavailable) setError("Your payment was already recorded, but this device cannot safely recover the original handoff code.");
       router.replace(`/dining/orders/${result.order.reference}`);
       return;
@@ -169,7 +176,7 @@ function CheckoutContent() {
             action: "checkout",
             outletId,
             customerName: name,
-            items: cart,
+            items: outletCart,
             roomReference,
             guestSurname,
             verificationCode,
@@ -193,7 +200,8 @@ function CheckoutContent() {
                 },
               }
             : result.order;
-          saveExternalOrder(guestOrder);
+          saveExternalOrder(guestOrder, outletId);
+          clearOutlet(outletId);
           window.location.assign(`/dining/orders/${result.order.reference}`);
           return;
         }
@@ -218,11 +226,12 @@ function CheckoutContent() {
       setBusy(false); submitting.current = false;
       return;
     }
-    saveExternalOrder(order);
+    saveExternalOrder(order, outletId);
+    clearOutlet(outletId);
     router.replace(`/dining/orders/${order.reference}`);
   }
 
-  if (!cart.length || !outlet)
+  if (!outletCart.length || !outlet)
     return (
       <FnbShell backHref="/dining/cart" title="Basket">
         <div className="mx-auto max-w-md px-5 py-20 text-center">
@@ -473,7 +482,7 @@ function CheckoutContent() {
 
         <section className="ll-panel mt-6 p-6">
           <div className="flex justify-between text-sm text-[var(--ll-muted)]">
-            <span>Items ({cart.reduce((sum, line) => sum + line.quantity, 0)})</span>
+            <span>Items ({outletCart.reduce((sum, line) => sum + line.quantity, 0)})</span>
             <span className="ll-amount font-semibold text-[var(--ll-slate)]">{money(total)}</span>
           </div>
           <div className="mt-3 flex justify-between border-t border-[var(--ll-border)] pt-3 text-lg font-bold text-[var(--ll-navy)]">
@@ -481,6 +490,15 @@ function CheckoutContent() {
             <span className="ll-amount text-xl text-[var(--ll-navy)]">{money(total)}</span>
           </div>
         </section>
+
+        {otherItemsCount > 0 && (
+          <div className="mt-4 rounded-2xl border border-amber-200/90 bg-amber-50/70 p-4 text-xs font-medium text-amber-900 shadow-2xs">
+            <p className="font-bold">Dishes from other venue(s) are saved</p>
+            <p className="mt-1 text-[11px] text-amber-800">
+              You are checking out items for <b>{outlet.name}</b>. Your remaining dishes from other venues will stay safely in your basket.
+            </p>
+          </div>
+        )}
 
         {operaResult && (
           <section
