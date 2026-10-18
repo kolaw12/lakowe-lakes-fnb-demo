@@ -13,6 +13,25 @@ export async function POST(request: NextRequest) {
   try {
     const body: unknown = await request.json();
     if (!body || typeof body !== "object" || !("action" in body) || typeof body.action !== "string") throw new Error("Unsupported demo action.");
+    if (body.action === "resetDemo") {
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.orderHandoff.deleteMany();
+      await prisma.orderFulfillment.deleteMany();
+      await prisma.orderVerification.deleteMany();
+      await prisma.operaRoomChargeAttempt.deleteMany();
+      await prisma.sageAccountingSync.deleteMany();
+      await prisma.refundRequest.deleteMany();
+      await prisma.overrideRequest.deleteMany();
+      await prisma.transaction.deleteMany();
+      await prisma.orderItem.deleteMany();
+      await prisma.order.deleteMany();
+      await prisma.walletLedgerEntry.deleteMany();
+      await prisma.depositRecord.deleteMany();
+      await prisma.walletAccount.updateMany({ data: { balance: 0 } });
+      await prisma.auditEvent.deleteMany();
+      await prisma.menuAvailability.deleteMany();
+      return NextResponse.json({ success: true, message: "Demo data reset successfully." });
+    }
     if (body.action === "createOrder") {
       const data = await createOrder(body as unknown as { outletId: string; customerName: string; items: never[] });
       return NextResponse.json({ data, snapshot: await snapshot() });

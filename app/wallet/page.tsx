@@ -24,28 +24,9 @@ type Wallet = {
 
 const DEFAULT_DEMO_WALLET: Wallet = {
   owner: "Tunde Adeyemi",
-  balance: 54090000,
-  spending: 5910000,
-  entries: [
-    {
-      id: "demo-w-1",
-      createdAt: new Date().toISOString(),
-      type: "purchase",
-      amount: -1850000,
-      description: "Dining at The 19th Hole (Clubhouse)",
-      reference: "LL-CHK-8902",
-      status: "posted",
-    },
-    {
-      id: "demo-w-2",
-      createdAt: new Date(Date.now() - 86400000).toISOString(),
-      type: "deposit",
-      amount: 20000000,
-      description: "Demo deposit for Lakowe stay",
-      reference: "DEP-9941",
-      status: "posted",
-    },
-  ],
+  balance: 0,
+  spending: 0,
+  entries: [],
 };
 
 export default function WalletPage() {
