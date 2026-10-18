@@ -158,13 +158,78 @@ export default function ManagementAuditPage() {
     {loading && !report && <div role="status" className="ll-panel-muted mt-6 grid h-52 place-items-center text-sm font-semibold text-slate-600">Loading activity timeline…</div>}
     {report && <section aria-busy={loading} className="mt-6">
       <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[#9A6510]">Activity timeline</p><h2 className="mt-2 text-xl font-bold text-[var(--ll-navy)]">{report.pagination.totalItems} total recorded event{report.pagination.totalItems === 1 ? "" : "s"}</h2></div><p className="text-xs font-semibold text-slate-600">Page {report.pagination.page} of {report.pagination.totalPages} · newest first</p></div>
-      <div className="relative mt-5 space-y-3 before:absolute before:bottom-5 before:left-[17px] before:top-5 before:w-px before:bg-[#C5A56A]/30">
-        {report.events.map(event => <article data-testid="audit-event" key={event.id} className="relative ml-9 ll-panel p-4 sm:p-5 shadow-xs"><span className="absolute -left-[29px] top-6 h-3 w-3 rounded-full border-2 border-[#C5A56A] bg-white" />
-          <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#9A6510]">{actionLabel(event.action)}</p><p className="mt-2 text-base font-bold text-[var(--ll-navy)]">{event.actorName} <span className="ml-2 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-700">{event.actorRole}</span></p><p className="mt-1 font-mono text-[10px] font-medium text-slate-500">{event.actorId} · {event.id}</p></div><time className="text-xs font-semibold text-slate-600">{new Date(event.timestamp).toLocaleString("en-NG")}</time></div>
-          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4"><div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Record type</p><p className="mt-1 font-bold text-slate-900 capitalize">{event.entityType}</p><p className="mt-1 break-all font-mono text-[10px] font-medium text-slate-600">{event.entityId}</p></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Outlet</p><p className="mt-1 font-bold text-slate-900">{event.outletName || "Unavailable"}</p></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Order reference</p><p className="mt-1 break-all font-mono text-xs font-bold text-slate-900">{event.orderReference || "Unavailable"}</p><p className="mt-1 break-all font-mono text-[10px] font-medium text-slate-600">{event.transactionId || "Transaction unavailable"}</p></div><div className="rounded-xl border border-slate-200 bg-slate-50 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Linked request</p><p className="mt-1 break-all font-mono text-xs font-bold text-slate-900">{event.overrideId || event.requestId || "Unavailable"}</p></div></div>
-          {(event.beforeValue !== null || event.afterValue !== null || event.eventDetails) && <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3"><summary className="cursor-pointer text-xs font-bold text-[#9A6510]">View details of change</summary><div className="mt-3 grid gap-3 lg:grid-cols-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Before</p><pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{detailValue(event.beforeValue)}</pre></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">After</p><pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{detailValue(event.afterValue)}</pre></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Details</p><pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{event.eventDetails ? detailValue({ ...event.eventDetails, proposedAmount: proposedAmount(event.eventDetails) }) : "Unavailable"}</pre></div></div></details>}
-        </article>)}
-        {!report.events.length && <p className="ml-9 rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm font-medium text-slate-600">No events found matching your search.</p>}
+      <div className="mt-5 space-y-3">
+        {report.events.map(event => (
+          <article
+            data-testid="audit-event"
+            key={event.id}
+            className="ll-panel p-4 sm:p-5 shadow-xs border border-slate-200/90 hover:border-[#C5A56A]/50 transition-colors"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="inline-block rounded-full bg-[#C5A56A]/10 border border-[#C5A56A]/30 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#9A6510]">
+                  {actionLabel(event.action)}
+                </span>
+                <p className="mt-2 text-base font-bold text-[var(--ll-navy)]">
+                  {event.actorName}{" "}
+                  <span className="ml-1.5 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-700">
+                    {event.actorRole}
+                  </span>
+                </p>
+                <p className="mt-1 font-mono text-[10px] font-medium text-slate-500">
+                  {event.actorId} · {event.id}
+                </p>
+              </div>
+              <time className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                {new Date(event.timestamp).toLocaleString("en-NG")}
+              </time>
+            </div>
+            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Record type</p>
+                <p className="mt-1 font-bold text-slate-900 capitalize">{event.entityType}</p>
+                <p className="mt-1 break-all font-mono text-[10px] font-medium text-slate-600">{event.entityId}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Outlet</p>
+                <p className="mt-1 font-bold text-slate-900">{event.outletName || "Unavailable"}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Order reference</p>
+                <p className="mt-1 break-all font-mono text-xs font-bold text-slate-900">{event.orderReference || "Unavailable"}</p>
+                <p className="mt-1 break-all font-mono text-[10px] font-medium text-slate-600">{event.transactionId || "Transaction unavailable"}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Linked request</p>
+                <p className="mt-1 break-all font-mono text-xs font-bold text-slate-900">{event.overrideId || event.requestId || "Unavailable"}</p>
+              </div>
+            </div>
+            {(event.beforeValue !== null || event.afterValue !== null || event.eventDetails) && (
+              <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <summary className="cursor-pointer text-xs font-bold text-[#9A6510]">View details of change</summary>
+                <div className="mt-3 grid gap-3 lg:grid-cols-3">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Before</p>
+                    <pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{detailValue(event.beforeValue)}</pre>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">After</p>
+                    <pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{detailValue(event.afterValue)}</pre>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">Details</p>
+                    <pre className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-slate-800">{event.eventDetails ? detailValue({ ...event.eventDetails, proposedAmount: proposedAmount(event.eventDetails) }) : "Unavailable"}</pre>
+                  </div>
+                </div>
+              </details>
+            )}
+          </article>
+        ))}
+        {!report.events.length && (
+          <p className="rounded-2xl border border-dashed border-slate-300 p-10 text-center text-sm font-medium text-slate-600">
+            No events found matching your search.
+          </p>
+        )}
       </div>
       <div className="ll-panel mt-5 flex items-center justify-between p-3 shadow-xs"><button disabled={loading || report.pagination.page <= 1} onClick={() => session && void load(session, report.pagination.page - 1, { from, to, employee, action, outlet, reference })} className="ll-btn ll-btn-secondary min-h-[38px] px-4 text-xs font-bold disabled:opacity-30">Previous</button><span className="text-xs font-semibold text-slate-600">{report.pagination.totalItems} total · {report.pagination.pageSize} per page</span><button disabled={loading || report.pagination.page >= report.pagination.totalPages} onClick={() => session && void load(session, report.pagination.page + 1, { from, to, employee, action, outlet, reference })} className="ll-btn ll-btn-secondary min-h-[38px] px-4 text-xs font-bold disabled:opacity-30">Next</button></div>
       <article className="ll-panel mt-5 p-5 shadow-xs"><p className="text-sm font-bold text-[var(--ll-navy)]">Activity log coverage</p><ul className="mt-3 space-y-2 text-sm leading-6 font-medium text-slate-700">{report.limitations.map(item => <li key={item}>• {item}</li>)}</ul></article>
