@@ -1,0 +1,298 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model DemoUser {
+  id String @id
+  name String
+  role String
+  outletIds String
+  createdAt DateTime @default(now())
+}
+
+model Outlet {
+  id String @id
+  name String
+  type String
+  createdAt DateTime @default(now())
+  orders Order[]
+  transactions Transaction[]
+}
+
+model Order {
+  id String @id @default(cuid())
+  reference String @unique
+  customerName String
+  outletId String
+  outlet Outlet @relation(fields: [outletId], references: [id])
+  status String
+  subtotal Int
+  total Int
+  paymentMethod String
+  createdAt DateTime @default(now())
+  items OrderItem[]
+  transaction Transaction?
+  operaRoomCharge OperaRoomChargeAttempt? @relation("OperaOrder")
+  verification OrderVerification?
+  handoff OrderHandoff?
+  fulfillment OrderFulfillment?
+}
+
+model OrderItem {
+  id String @id @default(cuid())
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId String
+  itemName String
+  unitPrice Int
+  quantity Int
+  choicesJson String
+}
+
+model Transaction {
+  id String @id
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id])
+  outletId String
+  outlet Outlet @relation(fields: [outletId], references: [id])
+  amount Int
+  paymentType String
+  status String
+  initiatedBy String
+  adjustmentJson String?
+  createdAt DateTime @default(now())
+  overrides OverrideRequest[]
+  operaRoomCharge OperaRoomChargeAttempt? @relation("OperaTransaction")
+  sageAccountingSync SageAccountingSync? @relation("SageSourceTransaction")
+  refundRequest RefundRequest?
+}
+
+model OverrideRequest {
+  id String @id
+  transactionId String
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  actorId String
+  action String
+  reason String
+  proposedAmount Int?
+  status String
+  decisionActorId String?
+  decisionReason String?
+  decidedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([status])
+}
+
+model RefundRequest {
+  id String @id
+  transactionId String @unique
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+  walletId String
+  sourceLedgerId String @unique
+  refundLedgerEntryId String? @unique
+  actorId String
+  reason String
+  status String
+  decisionActorId String?
+  decisionReason String?
+  decidedAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([status])
+  @@index([walletId])
+}
+
+model MenuAvailability {
+  outletId String
+  itemId String
+  available Boolean @default(true)
+  updatedBy String
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@id([outletId, itemId])
+  @@index([outletId, available])
+}
+
+model AuditEvent {
+  id String @id
+  actorId String
+  actorRole String
+  action String
+  entityType String
+  entityId String
+  beforeJson String?
+  afterJson String?
+  requestId String?
+  createdAt DateTime @default(now())
+  @@index([entityType, entityId])
+  @@index([requestId])
+}
+
+model WalletAccount {
+  id String @id @default(cuid())
+  userId String @unique
+  balance Int @default(0)
+  createdAt DateTime @default(now())
+  entries WalletLedgerEntry[]
+}
+model WalletLedgerEntry {
+  id String @id @default(cuid())
+  walletId String
+  wallet WalletAccount @relation(fields: [walletId], references: [id])
+  amount Int
+  type String
+  status String @default("posted")
+  description String?
+  orderReference String?
+  idempotencyKey String @unique
+  reference String @unique
+  createdAt DateTime @default(now())
+}
+model DepositRecord {
+  id String @id @default(cuid())
+  userId String
+  amount Int
+  status String
+  reference String @unique
+  createdAt DateTime @default(now())
+}
+
+model OperaRoomChargeAttempt {
+  id String @id
+  idempotencyKey String @unique
+  orderReference String @unique
+  orderId String? @unique
+  order Order? @relation("OperaOrder", fields: [orderId], references: [id])
+  transactionId String? @unique
+  transaction Transaction? @relation("OperaTransaction", fields: [transactionId], references: [id])
+  outletId String
+  amount Int
+  roomReference String
+  guestNameMasked String
+  checkoutJson String
+  verificationStatus String
+  postingStatus String
+  postingReference String? @unique
+  reconciliationState String
+  failureReason String?
+  scenario String?
+  initiatedBy String
+  initiatorRole String
+  attemptCount Int @default(1)
+  lastCheckedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postingStatus])
+  @@index([reconciliationState])
+  @@index([createdAt])
+}
+
+model SageAccountingSync {
+  id String @id
+  sourceTransactionId String @unique
+  sourceTransaction Transaction @relation("SageSourceTransaction", fields: [sourceTransactionId], references: [id])
+  sourceOrderReference String
+  outletId String
+  paymentMethod String
+  sourceTransactionStatus String
+  grossAmount Int
+  eligibleAmount Int
+  discountAmount Int
+  reversalAmount Int
+  reversalReference String?
+  mappingVersion String
+  revenueCategory String
+  offsetCategory String
+  postingCategory String
+  payloadJson String
+  scenario String
+  syncStatus String
+  postingReference String? @unique
+  reconciliationState String
+  failureReason String?
+  attemptCount Int @default(0)
+  preparedBy String
+  preparedRole String
+  lastActionBy String?
+  lastAttemptAt DateTime?
+  lastCheckedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([syncStatus])
+  @@index([reconciliationState])
+  @@index([createdAt])
+}
+
+model OrderVerification {
+  id String @id @default(cuid())
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id])
+  tokenHash String @unique
+  collectionCodeHash String @unique
+  tokenVersion Int @default(1)
+  status String @default("active")
+  handoffMode String
+  expiresAt DateTime
+  redeemedAt DateTime?
+  redeemedBy String?
+  revokedAt DateTime?
+  revokedBy String?
+  revokedReason String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  handoff OrderHandoff?
+
+  @@index([status, expiresAt])
+  @@index([handoffMode])
+}
+
+model OrderHandoff {
+  id String @id @default(cuid())
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id])
+  verificationId String @unique
+  verification OrderVerification @relation(fields: [verificationId], references: [id])
+  actorId String
+  actorRole String
+  outletId String
+  handoffMode String
+  safeMetadataJson String?
+  exceptionReason String?
+  completedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([actorId, completedAt])
+  @@index([outletId, completedAt])
+}
+
+model OrderFulfillment {
+  id String @id @default(cuid())
+  orderId String @unique
+  order Order @relation(fields: [orderId], references: [id])
+  checkoutKey String @unique
+  handoffMode String
+  destinationHint String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([handoffMode])
+}
+
+model OrderVerificationAttempt {
+  id String @id @default(cuid())
+  actorId String
+  credentialHash String
+  action String
+  success Boolean
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([credentialHash, createdAt])
+}

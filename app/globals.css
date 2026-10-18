@@ -1,0 +1,271 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..800;1,300..800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --ll-navy:#172B42;--ll-warm-white:#FAF9F6;--ll-gold:#C5A56A;--ll-silver:#E7EBED;--ll-slate:#2F3A45;--ll-surface:#FFF;--ll-muted:#5C6976;--ll-border:#D7DDE1;--ll-success:#167A52;--ll-success-bg:#E8F5EE;--ll-warning:#9A6510;--ll-warning-bg:#FFF5DB;--ll-error:#B42318;--ll-error-bg:#FEECEA;--ll-info:#185A8D;--ll-info-bg:#EAF3FA;--ll-disabled:#98A3AD;--font-montserrat:'Montserrat',ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--font-inter:var(--font-montserrat); }
+*{border-color:var(--ll-border)} html{background:var(--ll-warm-white)} body{min-height:100vh;background:var(--ll-warm-white);color:var(--ll-slate);font-family:var(--font-montserrat),sans-serif !important} button,input,select,textarea{font-family:var(--font-montserrat),sans-serif !important} :focus-visible{outline:3px solid rgb(197 165 106 / .55);outline-offset:3px}
+h1,h2,h3,h4,h5,h6,.font-serif,.font-sans,.font-inter{font-family:var(--font-montserrat),sans-serif !important}
+@layer components{
+.ll-page{min-height:100vh;background:var(--ll-warm-white);color:var(--ll-slate)}.ll-container{width:min(100% - 2rem,76rem);margin-inline:auto}.ll-panel{border:1px solid var(--ll-border);border-radius:1rem;background:var(--ll-surface);box-shadow:0 1px 2px rgb(23 43 66/.08)}.ll-panel-muted{border:1px solid var(--ll-border);border-radius:1rem;background:#F4F6F7}.ll-eyebrow{font-size:.75rem;line-height:1rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ll-muted)}.ll-page-title{color:var(--ll-navy);font-size:clamp(1.875rem,4vw,3rem);line-height:1.1;font-weight:700;letter-spacing:-.03em}.ll-section-title{color:var(--ll-navy);font-size:1.25rem;line-height:1.5rem;font-weight:700}.ll-amount{font-variant-numeric:tabular-nums;letter-spacing:-.02em}.ll-input{min-height:2.75rem;width:100%;border:1px solid var(--ll-border);border-radius:.5rem;background:#fff;padding:.625rem .75rem;color:var(--ll-slate)}.ll-input::placeholder{color:#72808D}.ll-label{display:block;font-size:.875rem;font-weight:600;color:var(--ll-slate)}.ll-btn{display:inline-flex;min-height:2.75rem;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px !important;padding:.625rem 1.25rem;font-size:.875rem;font-weight:700;transition:background-color .15s ease,color .15s ease,border-color .15s ease}.ll-btn-primary{background:var(--ll-navy);color:#fff}.ll-btn-primary:hover{background:#0F2133}.ll-btn-secondary{border:1px solid var(--ll-navy);background:#fff;color:var(--ll-navy)}.ll-btn-secondary:hover{background:#F0F3F5}.ll-btn-ghost{color:var(--ll-navy)}.ll-btn-ghost:hover{background:#EEF1F3}.ll-btn-danger{background:var(--ll-error);color:#fff}.ll-btn:disabled{cursor:not-allowed;background:#E4E8EB;color:var(--ll-disabled)}.ll-status{display:inline-flex;align-items:center;gap:.375rem;border-radius:999px;padding:.25rem .625rem;font-size:.75rem;font-weight:700;line-height:1rem}.ll-status-success{background:var(--ll-success-bg);color:var(--ll-success)}.ll-status-warning{background:var(--ll-warning-bg);color:var(--ll-warning)}.ll-status-error{background:var(--ll-error-bg);color:var(--ll-error)}.ll-status-info{background:var(--ll-info-bg);color:var(--ll-info)}.ll-alert{display:flex;gap:.75rem;border-radius:.75rem;border:1px solid currentColor;padding:.875rem 1rem;font-size:.875rem;line-height:1.4}.ll-data-table{width:100%;border-collapse:collapse;font-size:.875rem}.ll-data-table th{background:#F4F6F7;color:var(--ll-muted);font-size:.75rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}.ll-data-table th,.ll-data-table td{border-bottom:1px solid var(--ll-border);padding:.875rem 1rem;text-align:left}}
+@media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+/* Transitional surface bridges: scoped by application shell */
+.fnb-app,.staff-app,.management-app{background:var(--ll-warm-white);color:var(--ll-slate)}
+.fnb-app .bg-\[\#101712\],.fnb-app .bg-\[\#182019\],.fnb-app .bg-\[\#0d130e\]{background-color:var(--ll-surface);color:var(--ll-slate)}
+.staff-app .bg-\[\#182019\],.staff-app .bg-\[\#101712\],.management-app .bg-\[\#141f17\],.management-app .bg-\[\#152019\],.management-app .bg-\[\#0d1710\]{background-color:var(--ll-surface);color:var(--ll-slate)}
+.fnb-app input,.fnb-app select,.fnb-app textarea,.staff-app input,.staff-app select,.staff-app textarea,.management-app input,.management-app select,.management-app textarea{background:#fff;color:#0F172A;border-color:#CBD5E1}
+main.bg-forest-gradient{background:var(--ll-warm-white);color:var(--ll-slate)}main.bg-forest-gradient .bg-\[\#0c3520\]{background:var(--ll-surface);color:var(--ll-slate)}main.bg-forest-gradient .text-cream,main.bg-forest-gradient .text-cream\/60,main.bg-forest-gradient .text-cream\/55,main.bg-forest-gradient .text-cream\/50,main.bg-forest-gradient .text-cream\/45{color:var(--ll-slate)}main.bg-forest-gradient input,main.bg-forest-gradient select{background:#fff;color:#0F172A;border-color:#CBD5E1}
+
+/* Stage 3E Batch 4: mobile management information containment. */
+@media (max-width: 639px) {
+  .management-app .overflow-x-auto { margin-inline: -1rem; padding-inline: 1rem; -webkit-overflow-scrolling: touch; }
+  .management-app .overflow-x-auto::after { content: "Swipe to view additional columns"; display: block; padding: .5rem 1rem; color: var(--ll-muted); font-size: .75rem; }
+  .management-app table { font-size: .8125rem; }
+  .management-app table th, .management-app table td { padding: .75rem; }
+  .management-app details summary { min-height: 2.75rem; display: flex; align-items: center; }
+  .management-app [data-testid="opera-attempt"], .management-app [data-testid="sage-sync"], .management-app [data-testid="exception"] { border-radius: .75rem; }
+}
+
+/* Executive select dropdown redesign: global across all pages */
+@layer components {
+  .ll-select {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    min-height: 2.875rem !important;
+    width: 100%;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 0.75rem !important;
+    background-color: #ffffff !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23172B42' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m5 7.5 5 5 5-5'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.875rem center !important;
+    background-size: 1.125rem !important;
+    padding: 0.625rem 2.5rem 0.625rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .ll-select:hover {
+    border-color: #94A3B8 !important;
+  }
+  .ll-select:focus {
+    border-color: #C5A56A !important;
+    box-shadow: 0 0 0 3px rgba(197, 165, 106, 0.25) !important;
+    outline: none !important;
+  }
+  .ll-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background-color: #F8FAFC !important;
+  }
+
+  .ll-input {
+    min-height: 2.875rem !important;
+    width: 100%;
+    border: 1.5px solid #CBD5E1 !important;
+    border-radius: 0.75rem !important;
+    background: #ffffff !important;
+    padding: 0.625rem 0.875rem !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #0F172A !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .ll-input:hover {
+    border-color: #94A3B8 !important;
+  }
+  .ll-input:focus {
+    border-color: #C5A56A !important;
+    box-shadow: 0 0 0 3px rgba(197, 165, 106, 0.25) !important;
+    outline: none !important;
+  }
+  .ll-input::placeholder {
+    color: #64748B !important;
+    font-weight: 400;
+  }
+
+  .ll-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #1E293B;
+  }
+}
+
+/* Global select element styling: every <select> element everywhere gets luxury executive design */
+select, .ll-select, .management-app select, .staff-app select, .fnb-app select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-height: 2.875rem !important;
+  height: 2.875rem !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 0.75rem !important;
+  background-color: #ffffff !important;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%230F172A' stroke-linecap='round' stroke-linejoin='round' stroke-width='2.2' d='m5 7.5 5 5 5-5'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 1.125rem !important;
+  padding: 0.625rem 2.75rem 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+select:hover, .ll-select:hover, .management-app select:hover, .staff-app select:hover, .fnb-app select:hover {
+  border-color: #94A3B8 !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08) !important;
+}
+select:focus, .ll-select:focus, .management-app select:focus, .staff-app select:focus, .fnb-app select:focus {
+  border-color: #C5A56A !important;
+  box-shadow: 0 0 0 3px rgba(197, 165, 106, 0.25) !important;
+  outline: none !important;
+}
+select:disabled, .ll-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: #F8FAFC !important;
+}
+select option, .ll-select option {
+  background-color: #ffffff !important;
+  color: #0F172A !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Matching global date and text inputs */
+input[type="date"], input[type="text"], input[type="number"], input[type="search"], .ll-input {
+  min-height: 2.875rem !important;
+  height: 2.875rem !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 0.75rem !important;
+  background-color: #ffffff !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: #0F172A !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+input[type="date"]:hover, input[type="text"]:hover, input[type="number"]:hover, input[type="search"]:hover, .ll-input:hover {
+  border-color: #94A3B8 !important;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.08) !important;
+}
+input[type="date"]:focus, input[type="text"]:focus, input[type="number"]:focus, input[type="search"]:focus, .ll-input:focus {
+  border-color: #C5A56A !important;
+  box-shadow: 0 0 0 3px rgba(197, 165, 106, 0.25) !important;
+  outline: none !important;
+}
+
+/* Accessible contrast fixes for status alerts and indicators */
+.text-red-100, .text-red-200, .text-red-300 {
+  color: var(--ll-error) !important;
+}
+.text-amber-100, .text-amber-200, .text-amber-300 {
+  color: var(--ll-warning) !important;
+}
+.text-emerald-100, .text-emerald-200, .text-emerald-300 {
+  color: var(--ll-success) !important;
+}
+
+/* Ensure secondary / helper / muted text has strong readable contrast */
+.management-app main .text-white\/55,
+.management-app main .text-white\/50,
+.management-app main .text-white\/45,
+.management-app main .text-white\/40,
+.management-app main .text-white\/35,
+.management-app main .text-white\/30,
+.management-app main .text-white\/25,
+.management-app main .text-white\/20,
+.management-app main .text-white\/15,
+.management-app main .text-white\/10,
+.staff-app main .text-white\/55,
+.staff-app main .text-white\/50,
+.staff-app main .text-white\/45,
+.staff-app main .text-white\/40,
+.staff-app main .text-white\/35,
+.staff-app main .text-white\/30,
+.staff-app main .text-white\/25,
+.fnb-app .text-white\/55,
+.fnb-app .text-white\/50,
+.fnb-app .text-white\/45,
+.fnb-app .text-white\/40,
+.fnb-app .text-white\/35,
+.fnb-app .text-white\/30,
+.fnb-app .text-white\/25,
+.fnb-app .text-white\/20,
+.fnb-app .text-white\/15,
+.fnb-app .text-white\/10 {
+  color: var(--ll-muted) !important;
+}
+
+/* Guarantee crisp, visible white text on buttons, badges, and dark surfaces */
+.text-white,
+button.text-white,
+a.text-white,
+span.text-white,
+p.text-white,
+.ll-btn-primary,
+.bg-\[\#172B42\],
+button.bg-\[\#172B42\],
+.bg-\[var\(--ll-navy\)\],
+button.bg-\[var\(--ll-navy\)\] {
+  color: #ffffff !important;
+}
+
+/* Explicit protection for dropdown menu options so text remains dark slate */
+[role="listbox"] [role="option"],
+[role="listbox"] [role="option"] span {
+  color: #0F172A !important;
+}
+[role="listbox"] [role="option"][aria-selected="true"] {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+[role="listbox"] [role="option"][aria-selected="true"] span {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+}
+[role="listbox"] [role="option"][aria-selected="true"] svg {
+  color: #C5A56A !important;
+}
+
+/* Accent gold tones */
+.management-app main .text-\[\#d8b874\],
+.management-app main .text-\[\#e2c783\],
+.management-app main .text-\[\#e2ca8c\],
+.staff-app main .text-\[\#d8b874\],
+.staff-app main .text-\[\#e2c783\],
+.fnb-app .text-\[\#d8b874\],
+.fnb-app .text-\[\#e2c783\],
+.fnb-app .text-\[\#e2ca8c\],
+.fnb-app .text-\[\#d8bd7b\],
+.fnb-app .text-\[\#dfc681\] {
+  color: var(--ll-gold) !important;
+}
+
+/* Preserve white text on dark sidebars */
+.management-app aside .text-white,
+.management-app aside .text-white\/75,
+.management-app aside .text-white\/70,
+.management-app header .text-white,
+.staff-app aside .text-white,
+.staff-app aside .text-white\/75 {
+  color: #ffffff !important;
+}
+.management-app aside .text-white\/50,
+.staff-app aside .text-white\/60 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
