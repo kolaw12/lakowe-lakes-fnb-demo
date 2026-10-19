@@ -183,19 +183,19 @@ export default function StaffOrderDetail() {
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3">
                       <Link
                         href={`/staff/verify?order=${order.reference}`}
-                        className="ll-btn ll-btn-primary flex-1 min-h-12"
+                        className="ll-btn ll-btn-primary h-11 w-full whitespace-nowrap px-4 text-xs sm:text-sm"
                       >
-                        Scan QR or enter collection code
+                        Verify handoff
                       </Link>
 
                       {isSupervisor && (
                         <button
                           type="button"
                           onClick={() => setExceptionOpen(!exceptionOpen)}
-                          className="ll-btn bg-amber-700 text-white hover:bg-amber-800 text-xs px-3"
+                          className="ll-btn h-10 w-full whitespace-nowrap border border-amber-800 bg-amber-700 px-4 text-xs text-white hover:bg-amber-800 sm:w-auto"
                         >
                           Supervisor exception
                         </button>
