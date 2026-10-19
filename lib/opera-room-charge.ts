@@ -1,4 +1,5 @@
 import { Prisma, type OperaRoomChargeAttempt } from "@prisma/client";
+import { assertActiveOrderingOutlet } from "@/lib/clubhouse-config";
 import { cartTotal, getItem, type CartItem, type DemoOrder, type ModifierChoice } from "@/lib/fnb";
 import { getOperaAdapter, type OperaPostingStatus, type OperaScenario } from "@/lib/opera-demo-adapter";
 import { prisma } from "@/lib/prisma";
@@ -193,6 +194,7 @@ async function finalizePosting(attempt: OperaRoomChargeAttempt, postingReference
 
 export async function checkoutWithOpera(input: OperaCheckoutInput): Promise<OperaAttemptResult> {
   const idempotencyKey = clean(input.idempotencyKey, 100), outletId = clean(input.outletId, 60), customerName = clean(input.customerName, 80);
+  assertActiveOrderingOutlet(outletId);
   const roomReference = clean(input.roomReference, 12), guestSurname = clean(input.guestSurname, 60), verificationCode = clean(input.verificationCode, 40).toUpperCase();
   if (!/^[A-Za-z0-9-]{8,100}$/.test(idempotencyKey) || !customerName || !/^\d{3,6}$/.test(roomReference) || !/^[A-Za-z][A-Za-z '-]{1,59}$/.test(guestSurname) || !verificationCode) throw new Error("Enter valid fictional room verification details.");
   const items = normalizeCart(outletId, input.items);

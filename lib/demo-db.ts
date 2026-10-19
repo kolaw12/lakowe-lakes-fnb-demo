@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { assertActiveOrderingOutlet, isActiveOrderingOutlet } from "@/lib/clubhouse-config";
 import { cartTotal, getItem, outlets, type CartItem, type OrderStatus } from "@/lib/fnb";
 import { prisma } from "@/lib/prisma";
 import { refundSnapshot } from "@/lib/wallet-refunds";
@@ -69,6 +70,7 @@ export async function snapshot() {
 
 export async function createOrder(input: { outletId: string; customerName: string; items: CartItem[]; checkoutKey?: string; handoffMode?: unknown; destination?: unknown }) {
   await seed();
+  assertActiveOrderingOutlet(input.outletId);
   if (!input.customerName.trim() || !input.items.length || !input.items.every((i) => getItem(i.itemId)?.outletId === input.outletId)) throw Error("Invalid demo order.");
   await assertAvailableCart(input.outletId, input.items);
   const reference = ref("LL"), total = cartTotal(input.items);
@@ -113,6 +115,7 @@ export async function updateOrder(actorId: string, reference: string, status: Or
     include: { verification: true },
   });
   if (!order) throw new OrderStatusTransitionError("That order was not found.");
+  if (!isActiveOrderingOutlet(order.outletId)) throw new OrderStatusAuthorizationError("Historical orders outside The Clubhouse are read-only in this demo.");
   if (!u.outlets.includes(order.outletId)) throw new OrderStatusAuthorizationError("Your assigned outlets do not permit this order update.");
   if (!next[order.status as OrderStatus].includes(status)) throw new OrderStatusTransitionError("That order status transition is not permitted.");
 

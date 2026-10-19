@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { DiningNav, FnbShell } from "@/components/fnb/FnbShell";
 import { menuItems, outlets } from "@/lib/fnb";
+import { ACTIVE_OUTLET_ID } from "@/lib/clubhouse-config";
 
 export default function DiningHome() {
   return (
@@ -17,13 +18,13 @@ export default function DiningHome() {
             Thoughtful dining by the lake.
           </h1>
           <p className="mt-2 text-sm font-medium text-slate-600 sm:text-base">
-            Order fresh food and drinks across our resort venues.
+            Order fresh food and drinks at The Clubhouse.
           </p>
         </div>
 
         {/* Outlet Cards Grid */}
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
-          {outlets.map((o) => {
+          {outlets.filter((o) => o.id === ACTIVE_OUTLET_ID).map((o) => {
             const count = menuItems.filter((m) => m.outletId === o.id).length;
             return (
               <Link

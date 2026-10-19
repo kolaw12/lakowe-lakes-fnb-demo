@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { assertActiveOrderingOutlet } from "@/lib/clubhouse-config";
 import { cartTotal, getItem, type CartItem } from "@/lib/fnb";
 import { assertAvailableCart } from "@/lib/menu-availability";
 import { createVerificationForConfirmedOrder, normalizeFulfillment } from "@/lib/order-fulfillment";
@@ -34,6 +35,7 @@ export async function deposit(amount: number, idempotencyKey: string) {
 
 export async function walletCheckout(input: { outletId: string; customerName: string; items: CartItem[]; idempotencyKey: string; handoffMode?: unknown; destination?: unknown }) {
   const wallet = await account();
+  assertActiveOrderingOutlet(input.outletId);
   if (!input.idempotencyKey || !input.items.length || !input.items.every(item => getItem(item.itemId)?.outletId === input.outletId)) throw Error("Invalid wallet order.");
   await assertAvailableCart(input.outletId, input.items);
   const total = cartTotal(input.items);

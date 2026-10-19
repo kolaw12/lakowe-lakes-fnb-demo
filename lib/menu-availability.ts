@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { getItem, menuItems, outlets } from "@/lib/fnb";
 import { prisma } from "@/lib/prisma";
 import { getDemoStaffUser } from "@/lib/demo-db";
+import { assertActiveOrderingOutlet } from "@/lib/clubhouse-config";
 
 export class MenuAvailabilityAuthorizationError extends Error {}
 export class MenuAvailabilityValidationError extends Error {}
@@ -33,6 +34,7 @@ export async function menuAvailabilitySnapshot(outletId?: string) {
 }
 export async function setMenuAvailability(actorId: string, input: { outletId: string; itemId: string; available: boolean }) {
   const actor = await getDemoStaffUser(actorId);
+  assertActiveOrderingOutlet(input.outletId);
   const staticItem = getItem(input.itemId);
   const customItem = staticItem ? null : await prisma.menuCatalogItem.findUnique({ where: { id: input.itemId } });
   const item = staticItem || customItem;
@@ -49,6 +51,7 @@ export async function setMenuAvailability(actorId: string, input: { outletId: st
 
 export async function addMenuItem(actorId: string, input: { outletId: string; name: string; category: string; description: string; price: number; prepTime?: string; imageUrl?: string }) {
   const actor = await getDemoStaffUser(actorId);
+  assertActiveOrderingOutlet(input.outletId);
   const name = input.name?.trim(), category = input.category?.trim(), description = input.description?.trim();
   const prepTime = input.prepTime?.trim() || null;
   const imageUrl = input.imageUrl?.trim() || "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80";

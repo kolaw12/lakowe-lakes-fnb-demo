@@ -5,12 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { FnbShell } from "@/components/fnb/FnbShell";
 import { menuItems, money, outlets, type MenuItem } from "@/lib/fnb";
+import { ACTIVE_OUTLET_ID } from "@/lib/clubhouse-config";
 
 type Availability = Record<string, boolean>;
 
 function MenuContent() {
   const p = useSearchParams();
-  const id = p.get("outlet") || "clubhouse";
+  const requestedOutlet = p.get("outlet");
+  const id = ACTIVE_OUTLET_ID;
   const outlet = outlets.find((x) => x.id === id) || outlets[2];
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
@@ -53,6 +55,7 @@ function MenuContent() {
   return (
     <FnbShell backHref="/dining" title="All dining">
       <section className="ll-container py-6 sm:py-9">
+        {requestedOutlet && requestedOutlet !== ACTIVE_OUTLET_ID && <p role="status" className="ll-alert ll-status-info mb-4">This demo now accepts new orders at The Clubhouse only.</p>}
         {/* Outlet Header Banner */}
         <div className="relative overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-br from-white via-slate-50 to-amber-50/20 p-6 sm:p-8 shadow-xs">
           <div className="flex flex-wrap items-start justify-between gap-4">
