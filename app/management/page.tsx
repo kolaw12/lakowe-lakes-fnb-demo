@@ -47,7 +47,12 @@ export default function ManagementPage() {
     const controller = new AbortController(); activeRequest.current = controller;
     setLoading(true); setError("");
     try {
-      const response = await fetch(`/api/management/report?${query}`, { headers: { "x-demo-user-id": actorId }, cache: "no-store", signal: controller.signal });
+      const response = await fetch(`/api/management/report?${query}`, {
+        headers: { "x-demo-user-id": actorId },
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
       if (!response.ok) throw await responseError(response);
       const result: ReportResponse = await response.json();
       if (version === requestVersion.current && !controller.signal.aborted) setData(result);
@@ -59,9 +64,20 @@ export default function ManagementPage() {
   }, []);
 
   useEffect(() => {
-    const current = staffSession(); setSession(current);
-    if (current) void load("", current.id); else setLoading(false);
-    return () => activeRequest.current?.abort();
+    const sync = () => {
+      const current = staffSession();
+      setSession(current);
+      if (current && current.role === "supervisor") void load("", current.id);
+      else setLoading(false);
+    };
+    sync();
+    window.addEventListener("lakowe-staff-session-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      activeRequest.current?.abort();
+      window.removeEventListener("lakowe-staff-session-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, [load]);
 
   function apply(event: FormEvent<HTMLFormElement>) {
@@ -84,7 +100,7 @@ export default function ManagementPage() {
     { label: "Voided transactions", value: report.summary.voidedTransactions.toLocaleString(), note: "Excluded from eligible sales", icon: "↺", definition: report.definitions.voidedTransactions },
   ] : [], [report]);
 
-  if (!session) return <ManagementLoginRequired />;
+  if (!session || session.role !== "supervisor") return <ManagementLoginRequired />;
 
   return <ManagementShell userName={data?.access.name || session.name}>
     <main className="min-w-0 p-4 sm:p-6 xl:p-9" data-page="management">

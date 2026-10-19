@@ -63,18 +63,80 @@ const extra = [
   ],
 ] as const;
 
-export function staffSession() {
+export const STAFF_PROFILES = [
+  { id: "staff-ade", name: "Ade Adebayo", role: "staff", label: "Operations Staff · Clubhouse & Winebar", outlets: ["clubhouse", "winebar"] },
+  { id: "supervisor-kemi", name: "Kemi Okafor", role: "supervisor", label: "F&B Supervisor · Full Resort Access", outlets: ["clubhouse", "winebar", "revivo", "restaurant-18"] },
+] as const;
+
+export type StaffProfile = typeof STAFF_PROFILES[number];
+
+export function staffSession(): StaffProfile | null {
   if (typeof window === "undefined") return null;
   try {
-    return JSON.parse(localStorage.getItem("lakowe-staff-session") || "null") as { id: string; name: string; role: string; outlets?: string[] } | null;
+    const raw = localStorage.getItem("lakowe-staff-session");
+    if (raw) return JSON.parse(raw);
+    return null;
   } catch {
     return null;
   }
 }
 
+export async function switchStaffProfile(profileId: string): Promise<StaffProfile> {
+  const target = STAFF_PROFILES.find((p) => p.id === profileId) || STAFF_PROFILES[0];
+  if (typeof window !== "undefined") {
+    localStorage.setItem("lakowe-staff-session", JSON.stringify(target));
+    window.dispatchEvent(new CustomEvent("lakowe-staff-session-change", { detail: target }));
+  }
+  try {
+    await fetch("/api/demo/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ actorId: target.id }),
+    });
+  } catch {
+    // ignore
+  }
+  return target;
+}
+
 export function useStaffSession() {
-  const [session, setSession] = useState<ReturnType<typeof staffSession>>(null);
-  useEffect(() => setSession(staffSession()), []);
+  const [session, setSession] = useState<StaffProfile | null>(() => staffSession());
+
+  useEffect(() => {
+    let current = staffSession();
+    if (!current) {
+      current = STAFF_PROFILES[0];
+      void switchStaffProfile(current.id);
+      setSession(current);
+    } else {
+      setSession(current);
+      // Keep server session cookie warm and verified
+      void fetch("/api/demo/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ actorId: current.id }),
+      }).catch(() => null);
+    }
+
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<StaffProfile>;
+      if (custom.detail) {
+        setSession(custom.detail);
+      } else {
+        setSession(staffSession());
+      }
+    };
+
+    window.addEventListener("lakowe-staff-session-change", handler);
+    window.addEventListener("storage", handler);
+    return () => {
+      window.removeEventListener("lakowe-staff-session-change", handler);
+      window.removeEventListener("storage", handler);
+    };
+  }, []);
+
   return session;
 }
 
@@ -158,58 +220,97 @@ export function StaffShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="mt-8 border-t border-white/10 pt-5">
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.06] p-3 border border-white/10">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
-              {userInitials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-white">{user?.name || "Staff User"}</p>
-              <p className="text-[10px] font-medium text-emerald-400">
-                {user?.role ? `${user.role} · On Duty` : "On Duty"}
-              </p>
+          <div className="rounded-xl bg-white/[0.06] p-3 border border-white/10">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
+                {userInitials}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-white">{user?.name || "Ade Adebayo"}</p>
+                <p className="text-[10px] font-medium text-emerald-400">
+                  {user?.role === "supervisor" ? "Supervisor · On Duty" : "Staff · On Duty"}
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                void fetch("/api/demo/session", { method: "DELETE" });
-                localStorage.removeItem("lakowe-staff-session");
-                router.push("/staff/login");
-              }}
-              title="Sign out"
-              className="text-xs font-semibold text-slate-300 hover:text-white"
-            >
-              Exit
-            </button>
+            <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const nextId = user?.id === "supervisor-kemi" ? "staff-ade" : "supervisor-kemi";
+                  void switchStaffProfile(nextId);
+                }}
+                className="text-[11px] font-bold text-[#E5C384] hover:text-white flex items-center gap-1 transition"
+                title="Toggle between Staff and Supervisor identities"
+              >
+                <span>⇄ {user?.id === "supervisor-kemi" ? "Switch to Staff" : "Switch to Supervisor"}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void fetch("/api/demo/session", { method: "DELETE" });
+                  localStorage.removeItem("lakowe-staff-session");
+                  router.push("/staff/login");
+                }}
+                title="Sign out"
+                className="text-[10px] font-semibold text-slate-400 hover:text-white"
+              >
+                Exit
+              </button>
+            </div>
           </div>
         </div>
       </aside>
 
       {/* Mobile Top Navbar */}
-      <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-slate-800 bg-[#112032] px-4 py-2.5 text-white shadow-md md:hidden">
+      <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-slate-800 bg-[#112032] px-3.5 py-2.5 text-white shadow-md md:hidden">
         <div className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg border border-[#C5A56A]/50 bg-gradient-to-br from-[#1E3858] to-[#122336] font-serif text-xs font-bold text-[#E5C384]">
+          <Link href="/staff" className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-[#C5A56A]/50 bg-gradient-to-br from-[#1E3858] to-[#122336] font-serif text-xs font-bold text-[#E5C384]">
             LL
-          </span>
-          <div>
-            <b className="text-sm font-bold text-white block">{user?.name || "Operations"}</b>
-            <span className="text-[10px] font-semibold text-[#C5A56A] block">{user?.role || "Staff"}</span>
-          </div>
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              const nextId = user?.id === "supervisor-kemi" ? "staff-ade" : "supervisor-kemi";
+              void switchStaffProfile(nextId);
+            }}
+            className="flex flex-col text-left group"
+            title="Tap to switch between Staff and Supervisor"
+          >
+            <div className="flex items-center gap-1.5">
+              <b className="text-xs font-bold text-white leading-tight group-hover:text-[#E5C384] transition">
+                {user?.name || "Ade Adebayo"}
+              </b>
+              <span className="text-[11px] text-[#C5A56A] font-bold">⇄</span>
+            </div>
+            <span className="text-[10px] font-semibold text-[#C5A56A] block">
+              {user?.role === "supervisor" ? "Supervisor" : "Staff"} · Switch role
+            </span>
+          </button>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/staff/verify"
-            className="flex items-center gap-1.5 rounded-xl bg-[#C5A56A] px-3 py-1.5 text-xs font-bold text-[#152018] shadow-xs active:scale-95 hover:bg-[#B39358]"
+            className="flex items-center gap-1 rounded-xl bg-[#C5A56A] px-2.5 py-1.5 text-xs font-bold text-[#152018] shadow-xs active:scale-95 hover:bg-[#B39358]"
           >
             <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
             </svg>
-            <span>Scan handoff</span>
+            <span className="hidden sm:inline">Scan handoff</span>
+            <span className="sm:hidden">Scan</span>
           </Link>
-          {supervisor && (
+          {supervisor ? (
             <Link
-              href="/staff/approvals"
-              className="rounded-xl border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white"
+              href="/management"
+              className="rounded-xl border border-[#C5A56A]/40 bg-[#C5A56A]/10 px-2.5 py-1.5 text-xs font-bold text-[#E5C384]"
             >
-              Approvals
+              Management
+            </Link>
+          ) : (
+            <Link
+              href="/dining"
+              className="rounded-xl border border-white/20 bg-white/10 px-2.5 py-1.5 text-xs font-bold text-white"
+            >
+              Guest
             </Link>
           )}
         </div>

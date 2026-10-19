@@ -58,7 +58,12 @@ export default function AdvancedReportsPage() {
     const controller = new AbortController(); activeRequest.current = controller;
     setLoading(true); setError("");
     try {
-      const response = await fetch(`/api/management/reports?${query}`, { headers: { "x-demo-user-id": currentSession.id }, cache: "no-store", signal: controller.signal });
+      const response = await fetch(`/api/management/reports?${query}`, {
+        headers: { "x-demo-user-id": currentSession.id },
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
       if (!response.ok) throw await responseError(response);
       const body: ResponseBody = await response.json();
       if (version === requestVersion.current && !controller.signal.aborted) setResult({ body, query });
@@ -79,9 +84,20 @@ export default function AdvancedReportsPage() {
   }, []);
 
   useEffect(() => {
-    const current = staffSession(); setSession(current);
-    if (current) void loadQuery(current, queryFor("sales", emptyFilters)); else setLoading(false);
-    return () => activeRequest.current?.abort();
+    const sync = () => {
+      const current = staffSession();
+      setSession(current);
+      if (current && current.role === "supervisor") void loadQuery(current, queryFor("sales", emptyFilters));
+      else setLoading(false);
+    };
+    sync();
+    window.addEventListener("lakowe-staff-session-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      activeRequest.current?.abort();
+      window.removeEventListener("lakowe-staff-session-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, [loadQuery, queryFor]);
 
   function update(name: keyof Filters, value: string) { setFilters(current => ({ ...current, [name]: value })); }
@@ -109,7 +125,11 @@ export default function AdvancedReportsPage() {
     setDownloading(format); setError("");
     try {
       const query = new URLSearchParams(result.query); query.delete("page"); query.delete("pageSize"); query.set("format", format);
-      const response = await fetch(`/api/management/reports?${query}`, { headers: { "x-demo-user-id": session.id }, cache: "no-store" });
+      const response = await fetch(`/api/management/reports?${query}`, {
+        headers: { "x-demo-user-id": session.id },
+        credentials: "include",
+        cache: "no-store",
+      });
       if (!response.ok) throw await responseError(response);
       const blob = await response.blob(), url = URL.createObjectURL(blob), link = document.createElement("a");
       link.href = url; link.download = `lakowe-demo-${result.body.report.reportType}-report.${format}`; document.body.appendChild(link); link.click(); link.remove();
@@ -119,7 +139,7 @@ export default function AdvancedReportsPage() {
     } finally { setDownloading(""); }
   }
 
-  if (!session) return <ManagementLoginRequired />;
+  if (!session || session.role !== "supervisor") return <ManagementLoginRequired />;
   const report = result?.body.report;
   const options = report?.filterOptions;
   return <ManagementShell userName={result?.body.access.name || session.name}><main className="min-w-0 p-4 sm:p-6 xl:p-9" data-page="management-reports">

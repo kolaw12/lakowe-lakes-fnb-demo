@@ -7,7 +7,7 @@ const cookieName = "lakowe-demo-staff-id";
 
 export async function POST(request: NextRequest) {
   try {
-    const actorId = request.cookies.get(cookieName)?.value;
+    const actorId = request.cookies.get(cookieName)?.value || request.headers.get("x-demo-user-id");
     if (!actorId) return NextResponse.json({ error: "A server-issued demo staff session is required." }, { status: 401 });
     const actor = await getDemoStaffUser(actorId);
     const body: unknown = await request.json();

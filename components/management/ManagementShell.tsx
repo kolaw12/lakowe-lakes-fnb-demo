@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { switchStaffProfile } from "@/components/staff/StaffShell";
 
 const groups = [
   [
@@ -181,27 +182,43 @@ export function ManagementShell({
 
         {/* User Card */}
         <div className="mt-8 border-t border-white/10 pt-5">
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.06] p-3 border border-white/10">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
-              {userInitials}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-white">{userName}</p>
-              <p className="text-[10px] font-medium text-emerald-400">
-                Supervisor · Active
-              </p>
+          <div className="rounded-xl bg-white/[0.06] p-3 border border-white/10">
+            <div className="flex items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
+                {userInitials}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-white">{userName}</p>
+                <p className="text-[10px] font-medium text-emerald-400">
+                  Supervisor · Active
+                </p>
+              </div>
             </div>
-            <button
-              onClick={() => {
-                void fetch("/api/demo/session", { method: "DELETE" });
-                localStorage.removeItem("lakowe-staff-session");
-                router.push("/staff/login");
-              }}
-              title="Sign out"
-              className="text-xs font-semibold text-slate-300 hover:text-white"
-            >
-              Exit
-            </button>
+            <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await switchStaffProfile("staff-ade");
+                  router.push("/staff");
+                }}
+                className="text-[11px] font-bold text-[#E5C384] hover:text-white flex items-center gap-1 transition"
+                title="Switch to Operations Staff (Ade) and view queue"
+              >
+                <span>⇄ Switch to Staff</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void fetch("/api/demo/session", { method: "DELETE" });
+                  localStorage.removeItem("lakowe-staff-session");
+                  router.push("/staff/login");
+                }}
+                title="Sign out"
+                className="text-[10px] font-semibold text-slate-400 hover:text-white"
+              >
+                Exit
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -274,26 +291,41 @@ export function ManagementShell({
             </div>
 
             <div className="mt-8 border-t border-white/10 pt-4">
-              <div className="flex items-center gap-3 rounded-xl bg-white/[0.06] p-3 border border-white/10">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
-                  {userInitials}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-bold text-white">{userName}</p>
-                  <p className="text-[10px] font-medium text-emerald-400">
-                    Supervisor · Active
-                  </p>
+              <div className="rounded-xl bg-white/[0.06] p-3 border border-white/10">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#C5A56A] font-bold text-xs text-[#112032]">
+                    {userInitials}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-white">{userName}</p>
+                    <p className="text-[10px] font-medium text-emerald-400">
+                      Supervisor · Active
+                    </p>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    void fetch("/api/demo/session", { method: "DELETE" });
-                    localStorage.removeItem("lakowe-staff-session");
-                    router.push("/staff/login");
-                  }}
-                  className="text-xs font-semibold text-slate-300 underline hover:text-white"
-                >
-                  Exit
-                </button>
+                <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await switchStaffProfile("staff-ade");
+                      router.push("/staff");
+                    }}
+                    className="text-[11px] font-bold text-[#E5C384] hover:text-white flex items-center gap-1 transition"
+                  >
+                    <span>⇄ Switch to Staff</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void fetch("/api/demo/session", { method: "DELETE" });
+                      localStorage.removeItem("lakowe-staff-session");
+                      router.push("/staff/login");
+                    }}
+                    className="text-[10px] font-semibold text-slate-400 hover:text-white"
+                  >
+                    Exit
+                  </button>
+                </div>
               </div>
             </div>
           </aside>
@@ -340,19 +372,55 @@ export function ManagementShell({
 }
 
 export function ManagementLoginRequired() {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+
+  async function activateSupervisor() {
+    setBusy(true);
+    try {
+      await switchStaffProfile("supervisor-kemi");
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <main className="ll-page grid min-h-screen place-items-center p-5">
-      <section className="ll-panel w-full max-w-lg p-8 shadow-md">
+      <section className="ll-panel w-full max-w-lg p-7 sm:p-9 shadow-md">
         <p className="ll-eyebrow text-[#C5A56A]">Lakowe Lakes Management</p>
         <h1 className="ll-page-title mt-3 text-2xl font-bold text-[var(--ll-navy)]">
           Supervisor access required
         </h1>
-        <p className="mt-4 text-sm font-medium text-slate-700">
-          Choose the F&B supervisor identity in the staff demo to access this workspace.
+        <p className="mt-3 text-sm font-medium leading-relaxed text-slate-700">
+          Executive reports, financial synchronizations, and override audits require F&B Supervisor credentials (Kemi Okafor).
         </p>
-        <Link href="/staff/login" className="ll-btn ll-btn-primary mt-7">
-          Open staff demo login
-        </Link>
+
+        <div className="mt-6 space-y-3">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void activateSupervisor()}
+            className="ll-btn ll-btn-primary w-full min-h-[46px] text-sm font-bold shadow-xs flex items-center justify-center gap-2"
+          >
+            {busy ? "Activating session…" : "Continue as Supervisor (Kemi Okafor)"}
+          </button>
+          
+          <div className="flex items-center justify-between gap-3 pt-2">
+            <Link
+              href="/staff"
+              className="text-xs font-bold text-[#172B42] hover:text-[#9A6510] hover:underline"
+            >
+              ← Back to Operations Queue
+            </Link>
+            <Link
+              href="/staff/login"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+            >
+              Choose different role
+            </Link>
+          </div>
+        </div>
       </section>
     </main>
   );

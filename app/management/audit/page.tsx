@@ -73,7 +73,12 @@ export default function ManagementAuditPage() {
     const query = new URLSearchParams(Object.entries({ ...selected, page: String(page), pageSize: String(PAGE_SIZE) }).filter(([, value]) => value)).toString();
     setLoading(true); setError("");
     try {
-      const response = await fetch(`/api/management/audit?${query}`, { headers: { "x-demo-user-id": currentSession.id }, cache: "no-store", signal: controller.signal });
+      const response = await fetch(`/api/management/audit?${query}`, {
+        headers: { "x-demo-user-id": currentSession.id },
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
       if (!response.ok) throw await responseError(response);
       const result: ResponseBody = await response.json();
       if (version === requestVersion.current && !controller.signal.aborted) setData(result);
@@ -85,11 +90,22 @@ export default function ManagementAuditPage() {
   }, []);
 
   useEffect(() => {
-    const current = staffSession(); setSession(current);
     const initialReference = new URLSearchParams(window.location.search).get("reference") || "";
     setReference(initialReference);
-    if (current) void load(current, 1, { from: "", to: "", employee: "", action: "", outlet: "", reference: initialReference }); else setLoading(false);
-    return () => activeRequest.current?.abort();
+    const sync = () => {
+      const current = staffSession();
+      setSession(current);
+      if (current && current.role === "supervisor") void load(current, 1, { from: "", to: "", employee: "", action: "", outlet: "", reference: initialReference });
+      else setLoading(false);
+    };
+    sync();
+    window.addEventListener("lakowe-staff-session-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      activeRequest.current?.abort();
+      window.removeEventListener("lakowe-staff-session-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, [load]);
 
   function apply(event: FormEvent<HTMLFormElement>) {
@@ -104,7 +120,7 @@ export default function ManagementAuditPage() {
     if (session) void load(session, 1, empty);
   }
 
-  if (!session) return <ManagementLoginRequired />;
+  if (!session || session.role !== "supervisor") return <ManagementLoginRequired />;
   const report = data?.report;
   return <ManagementShell userName={data?.access.name || session.name}><main className="min-w-0 p-4 sm:p-6 xl:p-9" data-page="management-audit">
     <header>

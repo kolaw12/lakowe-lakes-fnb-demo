@@ -35,7 +35,12 @@ export default function ManagementOverridesPage() {
     const query = new URLSearchParams(Object.entries({ ...selected, page: String(page), pageSize: String(PAGE_SIZE) }).filter(([, value]) => value)).toString();
     setLoading(true); setError("");
     try {
-      const response = await fetch(`/api/management/overrides?${query}`, { headers: { "x-demo-user-id": currentSession.id }, cache: "no-store", signal: controller.signal });
+      const response = await fetch(`/api/management/overrides?${query}`, {
+        headers: { "x-demo-user-id": currentSession.id },
+        credentials: "include",
+        cache: "no-store",
+        signal: controller.signal,
+      });
       if (!response.ok) throw await responseError(response);
       const result: ResponseBody = await response.json();
       if (version === requestVersion.current && !controller.signal.aborted) setData(result);
@@ -47,11 +52,23 @@ export default function ManagementOverridesPage() {
   }, []);
 
   useEffect(() => {
-    const current = staffSession(); setSession(current);
     const reference = new URLSearchParams(window.location.search).get("reference") || "";
-    const initial = { ...emptyFilters, reference }; setFilters(initial);
-    if (current) void load(current, 1, initial); else setLoading(false);
-    return () => activeRequest.current?.abort();
+    const initial = { ...emptyFilters, reference };
+    setFilters(initial);
+    const sync = () => {
+      const current = staffSession();
+      setSession(current);
+      if (current && current.role === "supervisor") void load(current, 1, initial);
+      else setLoading(false);
+    };
+    sync();
+    window.addEventListener("lakowe-staff-session-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      activeRequest.current?.abort();
+      window.removeEventListener("lakowe-staff-session-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, [load]);
 
   function update(name: keyof Filters, value: string) { setFilters(current => ({ ...current, [name]: value })); }
@@ -63,7 +80,7 @@ export default function ManagementOverridesPage() {
   }
   function clear() { setFilters(emptyFilters); if (session) void load(session, 1, emptyFilters); }
 
-  if (!session) return <ManagementLoginRequired />;
+  if (!session || session.role !== "supervisor") return <ManagementLoginRequired />;
   const report = data?.report;
   return <ManagementShell userName={data?.access.name || session.name}><main className="min-w-0 p-4 sm:p-6 xl:p-9" data-page="management-overrides">
     <header>

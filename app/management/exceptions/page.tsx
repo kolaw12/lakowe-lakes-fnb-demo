@@ -22,6 +22,7 @@ export default function ExceptionsPage() {
         ).toString(),
         r = await fetch("/api/management/exceptions?" + q, {
           headers: { "x-demo-user-id": user.id },
+          credentials: "include",
           cache: "no-store",
         }),
         b = await r.json();
@@ -35,13 +36,22 @@ export default function ExceptionsPage() {
   }, []);
 
   useEffect(() => {
-    const u = staffSession();
-    setSession(u);
-    if (u) void load(u);
-    else setLoading(false);
+    const sync = () => {
+      const u = staffSession();
+      setSession(u);
+      if (u && u.role === "supervisor") void load(u);
+      else setLoading(false);
+    };
+    sync();
+    window.addEventListener("lakowe-staff-session-change", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("lakowe-staff-session-change", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, [load]);
 
-  if (!session) return <ManagementLoginRequired />;
+  if (!session || session.role !== "supervisor") return <ManagementLoginRequired />;
   const update = (k: keyof Filters, v: string) => setFilters((x) => ({ ...x, [k]: v }));
   const apply = (e: FormEvent) => {
     e.preventDefault();
