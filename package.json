@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate:cloud": "node scripts/migrate-turso.mjs",
+    "test:persistence": "node verification/persistence.mjs"
   },
   "dependencies": {
+    "@libsql/client": "^0.8.1",
+    "@prisma/adapter-libsql": "^6.19.3",
     "@prisma/client": "^6.19.3",
     "@types/pdfkit": "^0.17.6",
     "@types/qrcode": "^1.5.6",

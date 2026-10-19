@@ -6,7 +6,12 @@ export const dynamic = "force-dynamic";
 const DEMO_STAFF_COOKIE = "lakowe-demo-staff-id";
 
 export async function GET() {
-  return NextResponse.json(await snapshot());
+  try {
+    return NextResponse.json(await snapshot(), { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("Order snapshot unavailable:", error instanceof Error ? error.message : "Database unavailable");
+    return NextResponse.json({ error: "Order records are temporarily unavailable. Please try again shortly." }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 }
 
 export async function POST(request: NextRequest) {

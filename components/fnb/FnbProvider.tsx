@@ -1,13 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { CartItem, DemoOrder, ModifierChoice } from "@/lib/fnb";
 import { getItem } from "@/lib/fnb";
+import { guestStorageKey, mergeOrders, normalizeGuestOrder, readGuestState, writeGuestState, type GuestState } from "@/lib/guest-storage";
 
 type FnbContextValue = {
   cart: CartItem[];
   orders: DemoOrder[];
   ready: boolean;
+  syncError: string;
+  rememberOrder: (order: DemoOrder, outletId?: string) => void;
   addItem: (itemId: string, quantity: number, choices: ModifierChoice[]) => boolean;
   updateQuantity: (key: string, quantity: number) => void;
   removeItem: (key: string) => void;
@@ -16,69 +19,87 @@ type FnbContextValue = {
 };
 
 const FnbContext = createContext<FnbContextValue | null>(null);
-const key = "lakowe-fnb-demo-v1";
-
-function mergeOrders(serverOrders: DemoOrder[], currentOrders: DemoOrder[]): DemoOrder[] {
-  return serverOrders.map((serverOrder) => {
-    const existing = currentOrders.find((o) => o.reference === serverOrder.reference);
-    if (existing?.verification) {
-      return { ...serverOrder, verification: existing.verification };
-    }
-    return serverOrder;
-  });
-}
-
 export function FnbProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [orders, setOrders] = useState<DemoOrder[]>([]);
+  const [state, setState] = useState<GuestState>({ cart: [], orders: [] });
+  const currentState = useRef(state);
+  const { cart, orders } = state;
   const [ready, setReady] = useState(false);
+  const [syncError, setSyncError] = useState("");
 
-  useEffect(() => {
-    let initialOrders: DemoOrder[] = [];
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setCart(parsed.cart || []);
-        initialOrders = parsed.orders || [];
-        setOrders(initialOrders);
-      } catch {
-        localStorage.removeItem(key);
-      }
-    }
-    fetch("/api/demo", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => {
-        if (data?.orders) {
-          setOrders((current) => mergeOrders(data.orders, current.length ? current : initialOrders));
-        }
-      })
-      .finally(() => setReady(true));
+  const commit = useCallback((update: (current: GuestState) => GuestState) => {
+    // Read the latest tab's state before writing, including its private receipt data.
+    const next = update(readGuestState() || currentState.current);
+    currentState.current = next;
+    writeGuestState(next);
+    setState(next);
   }, []);
 
-  useEffect(() => {
-    if (ready) localStorage.setItem(key, JSON.stringify({ version: 2, cart, orders }));
-  }, [cart, orders, ready]);
+  const setCart = useCallback((update: (cart: CartItem[]) => CartItem[]) => {
+    commit(current => ({ ...current, cart: update(current.cart) }));
+  }, [commit]);
+
+  const rememberOrder = useCallback((order: DemoOrder, outletId?: string) => {
+    commit(current => ({
+      orders: mergeOrders([normalizeGuestOrder(order)], current.orders),
+      cart: outletId ? current.cart.filter(line => getItem(line.itemId)?.outletId !== outletId) : current.cart,
+    }));
+  }, [commit]);
 
   useEffect(() => {
-    if (!ready) return;
-    const sync = () =>
-      fetch("/api/demo", { cache: "no-store" })
-        .then((response) => (response.ok ? response.json() : null))
-        .then((data) => {
-          if (data?.orders) {
-            setOrders((current) => mergeOrders(data.orders, current));
-          }
-        });
-    const interval = setInterval(sync, 5000);
-    return () => clearInterval(interval);
-  }, [ready]);
+    let active = true;
+    let fetching = false;
+    const saved = readGuestState();
+    if (saved) {
+      currentState.current = saved;
+      setState(saved);
+    }
+    const sync = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const response = await fetch("/api/demo", { cache: "no-store" });
+        if (!response.ok) throw new Error("Orders unavailable");
+        const data = await response.json();
+        if (!Array.isArray(data?.orders)) throw new Error("Orders unavailable");
+        if (active) {
+          commit(current => ({ ...current, orders: mergeOrders(data.orders, current.orders) }));
+          setSyncError("");
+        }
+      } catch {
+        if (active) setSyncError("Order updates are temporarily unavailable. Saved receipts are still available; please try again shortly.");
+      } finally {
+        fetching = false;
+        if (active) setReady(true);
+      }
+    };
+    const storage = (event: StorageEvent) => {
+      if (event.key !== guestStorageKey) return;
+      const latest = readGuestState();
+      if (latest) {
+        currentState.current = latest;
+        setState(latest);
+      }
+    };
+    const focus = () => { void sync(); };
+    void sync();
+    const interval = setInterval(focus, 5000);
+    window.addEventListener("storage", storage);
+    window.addEventListener("focus", focus);
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener("storage", storage);
+      window.removeEventListener("focus", focus);
+    };
+  }, [commit]);
 
   const value = useMemo(
     () => ({
       cart,
       orders,
       ready,
+      syncError,
+      rememberOrder,
       addItem(itemId: string, quantity: number, choices: ModifierChoice[]) {
         const choiceKey = choices.map((choice) => choice.id).sort().join("-");
         const existingKey = `${itemId}-${choiceKey}`;
@@ -124,13 +145,11 @@ export function FnbProvider({ children }: { children: React.ReactNode }) {
             }
           : rawOrder;
 
-        setOrders((current) => [guestOrder, ...current.filter((o) => o.reference !== guestOrder.reference)]);
-        // Keep dishes from other venues saved in the basket!
-        setCart((current) => current.filter((line) => getItem(line.itemId)?.outletId !== outletId));
+        rememberOrder(guestOrder, outletId);
         return guestOrder;
       },
     }),
-    [cart, orders, ready]
+    [cart, orders, ready, syncError, rememberOrder, setCart]
   );
 
   return <FnbContext.Provider value={value}>{children}</FnbContext.Provider>;

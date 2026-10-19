@@ -23,16 +23,16 @@ export default function OrderTracking() {
   }
 
   const { reference } = useParams<{ reference: string }>();
-  const { orders } = useFnb();
+  const { orders, ready, syncError } = useFnb();
   const order = orders.find((item) => item.reference === reference);
 
   if (!order) {
     return (
       <FnbShell backHref="/dining/orders" title="Orders">
         <div className="mx-auto max-w-md px-5 py-20 text-center">
-          <h1 className="font-serif text-2xl font-bold text-[#172B42]">Order not found</h1>
+          <h1 className="font-serif text-2xl font-bold text-[#172B42]">{!ready ? "Loading your order…" : syncError ? "Unable to load your order" : "Order not found"}</h1>
           <p className="mt-3 text-sm text-slate-500">
-            This device does not have that demo order saved.
+            {!ready ? "Checking your saved receipt and order history." : syncError || "No order matches this reference."}
           </p>
           <Link
             href="/dining/orders"
@@ -51,6 +51,7 @@ export default function OrderTracking() {
   return (
     <FnbShell backHref="/dining/orders" title="Orders">
       <section className="ll-container max-w-2xl px-4 py-6 sm:py-8">
+        {syncError && <p role="status" className="ll-alert mb-4">{syncError}</p>}
         {/* Top Confirmation Card */}
         <div className="rounded-3xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs">
           <div className="flex items-start justify-between gap-3">

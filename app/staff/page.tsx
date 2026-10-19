@@ -10,17 +10,30 @@ import { Dropdown } from "@/components/ui/Dropdown";
 
 export default function StaffDashboard() {
   const [data, setData] = useState<any>(null);
+  const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
   const user = useStaffSession();
 
   useEffect(() => {
-    const load = () =>
-      fetch("/api/demo", { cache: "no-store" })
-        .then((r) => r.json())
-        .then(setData);
-    load();
+    let active = true;
+    let fetching = false;
+    const load = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const response = await fetch("/api/demo", { cache: "no-store" });
+        if (!response.ok) throw new Error("Records unavailable");
+        const snapshot = await response.json();
+        if (!Array.isArray(snapshot?.orders)) throw new Error("Records unavailable");
+        if (active) { setData(snapshot); setError(""); }
+      } catch {
+        if (active) setError("Order records could not be refreshed. Please try again shortly.");
+      } finally { fetching = false; }
+    };
+    void load();
     const t = setInterval(load, 5000);
-    return () => clearInterval(t);
+    window.addEventListener("focus", load);
+    return () => { active = false; clearInterval(t); window.removeEventListener("focus", load); };
   }, []);
 
   const orders = useMemo(
@@ -68,12 +81,13 @@ export default function StaffDashboard() {
         </div>
       </header>
 
+      {error && <p role="alert" className="ll-alert ll-status-error mt-5">{error}</p>}
       <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {statuses.map((s) => (
           <article key={s} className="ll-panel p-4">
             <p className="ll-eyebrow">{s === "completed" ? "Completed / Received" : s}</p>
             <p className="ll-amount mt-2 text-3xl font-bold text-[var(--ll-navy)]">
-              {orders.filter((o: any) => o.status === s).length}
+              {data ? orders.filter((o: any) => o.status === s).length : "—"}
             </p>
           </article>
         ))}
@@ -113,7 +127,7 @@ export default function StaffDashboard() {
             </article>
           ))}
         </div>
-        {!orders.length && <div className="ll-panel-muted p-10 text-center text-sm text-[var(--ll-muted)]">No orders for this outlet.</div>}
+        {data && !orders.length && <div className="ll-panel-muted p-10 text-center text-sm text-[var(--ll-muted)]">No orders for this outlet.</div>}
       </section>
     </StaffShell>
   );

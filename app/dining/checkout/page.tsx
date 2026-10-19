@@ -5,26 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { FnbShell } from "@/components/fnb/FnbShell";
 import { useFnb } from "@/components/fnb/FnbProvider";
-import { cartTotal, getItem, money, outlets, HANDOFF_MODES, type CartItem, type DemoOrder, type HandoffMode } from "@/lib/fnb";
+import { cartTotal, getItem, money, outlets, HANDOFF_MODES, type DemoOrder, type HandoffMode } from "@/lib/fnb";
 import { OPERA_DEMO_SCENARIOS } from "@/lib/opera-demo-adapter";
 import type { OperaAttemptResult } from "@/lib/opera-room-charge";
 
 type PaymentMethod = "demo" | "wallet" | "opera";
-const storageKey = "lakowe-fnb-demo-v1";
-
-function saveExternalOrder(order: DemoOrder, outletIdToClear?: string) {
-  let existing: DemoOrder[] = [];
-  let remainingCart: CartItem[] = [];
-  try {
-    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}") as { orders?: DemoOrder[]; cart?: CartItem[] };
-    existing = stored.orders || [];
-    if (stored.cart && outletIdToClear) {
-      remainingCart = stored.cart.filter(item => getItem(item.itemId)?.outletId !== outletIdToClear);
-    }
-  } catch {}
-  localStorage.setItem(storageKey, JSON.stringify({ version: 2, cart: remainingCart, orders: [order, ...existing.filter(item => item.reference !== order.reference)] }));
-}
-
 const handoffConfig: Record<HandoffMode, { title: string; desc: string; destLabel: string; placeholder: string; outlets: string[] }> = {
   counter: {
     title: "Counter pickup",
@@ -61,7 +46,7 @@ function CheckoutContent() {
   const router = useRouter();
   const outletId = params.get("outlet") || "";
   const outlet = outlets.find(item => item.id === outletId);
-  const { cart, checkout, clearOutlet } = useFnb();
+  const { cart, checkout, rememberOrder } = useFnb();
   const outletCart = useMemo(() => cart.filter(item => getItem(item.itemId)?.outletId === outletId), [cart, outletId]);
   const otherItemsCount = cart.length - outletCart.length;
   const [name, setName] = useState("");
@@ -107,7 +92,7 @@ function CheckoutContent() {
       if (!response.ok) throw new Error(result.error || "The simulated posting status is unavailable.");
       setOperaResult(result);
       if (result.outcome === "confirmed" && result.order) {
-        saveExternalOrder(result.order);
+        rememberOrder(result.order, outletId);
         window.location.assign(`/dining/orders/${result.order.reference}`);
       }
     } catch (cause) { setError(cause instanceof Error ? cause.message : "The simulated posting status is unavailable."); }
@@ -154,8 +139,7 @@ function CheckoutContent() {
             },
           }
         : result.order;
-      saveExternalOrder(guestOrder, outletId);
-      clearOutlet(outletId);
+      rememberOrder(guestOrder, outletId);
       if (result.credentialRecoveryUnavailable) setError("Your payment was already recorded, but this device cannot safely recover the original handoff code.");
       router.replace(`/dining/orders/${result.order.reference}`);
       return;
@@ -182,7 +166,7 @@ function CheckoutContent() {
             verificationCode,
             idempotencyKey: operaKey.current,
             handoffMode,
-            destination: effectiveDestination || roomReference,
+            destination: effectiveDestination,
           }),
         });
         const result = await response.json() as OperaAttemptResult & { error?: string };
@@ -200,8 +184,7 @@ function CheckoutContent() {
                 },
               }
             : result.order;
-          saveExternalOrder(guestOrder, outletId);
-          clearOutlet(outletId);
+          rememberOrder(guestOrder, outletId);
           window.location.assign(`/dining/orders/${result.order.reference}`);
           return;
         }
@@ -226,8 +209,6 @@ function CheckoutContent() {
       setBusy(false); submitting.current = false;
       return;
     }
-    saveExternalOrder(order, outletId);
-    clearOutlet(outletId);
     router.replace(`/dining/orders/${order.reference}`);
   }
 
