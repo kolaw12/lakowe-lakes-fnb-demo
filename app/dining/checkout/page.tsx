@@ -46,7 +46,7 @@ function CheckoutContent() {
   const router = useRouter();
   const outletId = params.get("outlet") || "";
   const outlet = outlets.find(item => item.id === outletId);
-  const { cart, checkout, rememberOrder } = useFnb();
+  const { cart, checkout, ready, rememberOrder } = useFnb();
   const outletCart = useMemo(() => cart.filter(item => getItem(item.itemId)?.outletId === outletId), [cart, outletId]);
   const otherItemsCount = cart.length - outletCart.length;
   const [name, setName] = useState("");
@@ -211,6 +211,15 @@ function CheckoutContent() {
     }
     router.replace(`/dining/orders/${order.reference}`);
   }
+
+  if (!ready)
+    return (
+      <FnbShell backHref="/dining/cart" title="Basket">
+        <div className="mx-auto max-w-md px-5 py-20 text-center">
+          <p className="text-sm font-medium text-[var(--ll-muted)]">Loading your basket…</p>
+        </div>
+      </FnbShell>
+    );
 
   if (!outletCart.length || !outlet)
     return (
