@@ -23,6 +23,23 @@ model Outlet {
   createdAt DateTime @default(now())
   orders Order[]
   transactions Transaction[]
+  catalogItems MenuCatalogItem[]
+}
+
+model MenuCatalogItem {
+  id String @id
+  outletId String
+  outlet Outlet @relation(fields: [outletId], references: [id])
+  name String
+  category String
+  description String
+  price Int
+  prepTime String?
+  imageUrl String
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([outletId, createdAt])
 }
 
 model Order {
