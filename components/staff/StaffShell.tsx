@@ -101,7 +101,11 @@ export async function switchStaffProfile(profileId: string): Promise<StaffProfil
 }
 
 export function useStaffSession() {
-  const [session, setSession] = useState<StaffProfile | null>(() => staffSession());
+  // Keep the server render and the browser's first render identical. Reading a
+  // saved supervisor profile here would make the client render supervisor-only
+  // navigation while the server rendered the default staff view, which breaks
+  // hydration. Restore the persisted session after the component mounts.
+  const [session, setSession] = useState<StaffProfile | null>(null);
 
   useEffect(() => {
     let current = staffSession();
